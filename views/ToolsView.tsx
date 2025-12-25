@@ -34,6 +34,35 @@ const tools: CalculationTool[] = [
     })
   },
   {
+    id: 'battery_sizing',
+    name: "Battery Capacity Sizing",
+    description: "Calculate Battery Ah from Load, Runtime, DoD & Temp.",
+    category: 'Power',
+    inputs: [
+      { name: 'i', label: 'Load Current', unit: 'A' },
+      { name: 'h', label: 'Required Runtime', unit: 'h' },
+      { name: 'v', label: 'System Voltage', unit: 'V' },
+      { name: 'dod', label: 'Depth of Discharge', unit: '%' },
+      { name: 'temp', label: 'Temp Derating Factor', unit: '0-1' },
+    ],
+    calculate: (val) => {
+        const ah_load = val.i * val.h;
+        // DoD: Enter 50 for 50%. Guard against 0 or negative.
+        const dod_factor = val.dod > 0 ? val.dod / 100 : 1; 
+        // Temp factor: Enter 0.8 for 80% efficiency. Guard against 0.
+        const temp_factor = val.temp > 0 ? val.temp : 1;
+        
+        const req_ah = ah_load / (dod_factor * temp_factor);
+        const req_wh = req_ah * val.v;
+        
+        return {
+            result: req_ah,
+            unit: 'Ah',
+            steps: `Basic Requirement: ${val.i} A × ${val.h} h = ${ah_load.toFixed(2)} Ah\n\nAdjustments:\n• Depth of Discharge (${val.dod}%): / ${dod_factor.toFixed(2)}\n• Temperature Factor (${val.temp}): / ${temp_factor}\n\nCalculation:\n${ah_load.toFixed(2)} / (${dod_factor.toFixed(2)} × ${temp_factor}) = ${req_ah.toFixed(2)} Ah\n\nTotal Energy Capacity: ${req_wh.toFixed(1)} Wh`
+        }
+    }
+  },
+  {
     id: 'dc_motor',
     name: "DC Motor Calculator",
     description: "Calculate Speed, Torque & Power (Ideal).",
@@ -264,6 +293,43 @@ const tools: CalculationTool[] = [
               result: res,
               unit: 'H',
               steps: `Parallel Formula: Leq = (L1 × L2) / (L1 + L2)\nLeq = (${v.l1} × ${v.l2}) / (${v.l1} + ${v.l2})`
+          };
+      }
+    }
+  },
+  {
+    id: 'cap_calc',
+    name: "Capacitor Calc (C1, C2)",
+    description: "Equivalent capacitance for Series or Parallel connection.",
+    category: 'Components',
+    inputs: [
+      { name: 'c1', label: 'Capacitance 1', unit: 'F' },
+      { name: 'c2', label: 'Capacitance 2', unit: 'F' },
+      { 
+          name: 'type', 
+          label: 'Connection',
+          options: [
+              { label: 'Series', value: 1 },
+              { label: 'Parallel', value: 2 }
+          ]
+      }
+    ],
+    calculate: (v) => {
+      if (v.type === 1) {
+          // Series (Inverse sum)
+          const denom = v.c1 + v.c2;
+          const res = denom === 0 ? 0 : (v.c1 * v.c2) / denom;
+          return {
+              result: res,
+              unit: 'F',
+              steps: `Series Formula: 1/Ceq = 1/C1 + 1/C2\nCeq = (C1 × C2) / (C1 + C2) = (${v.c1} × ${v.c2}) / (${v.c1} + ${v.c2})`
+          };
+      } else {
+          // Parallel (Sum)
+          return {
+              result: v.c1 + v.c2,
+              unit: 'F',
+              steps: `Parallel Formula: Ceq = C1 + C2\nCeq = ${v.c1} + ${v.c2}`
           };
       }
     }

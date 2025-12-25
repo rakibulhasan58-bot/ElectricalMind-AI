@@ -6,14 +6,13 @@ interface CalculatorCardProps {
 }
 
 const CalculatorCard: React.FC<CalculatorCardProps> = ({ tool }) => {
-  // Store inputs as strings to allow typing (e.g., "0." or "-") and validate later
   const [inputValues, setInputValues] = useState<Record<string, string>>(() => {
     const defaults: Record<string, string> = {};
     tool.inputs.forEach(input => {
       if (input.options && input.options.length > 0) {
         defaults[input.name] = input.options[0].value.toString();
       } else {
-        defaults[input.name] = ''; // Initialize empty for text inputs
+        defaults[input.name] = '';
       }
     });
     return defaults;
@@ -22,14 +21,11 @@ const CalculatorCard: React.FC<CalculatorCardProps> = ({ tool }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [result, setResult] = useState<{ result: number; unit: string; steps: string } | null>(null);
   const [showSteps, setShowSteps] = useState(false);
+  // Animation state key to force re-render animation
+  const [resultKey, setResultKey] = useState(0);
 
   const handleInputChange = (name: string, value: string) => {
-    setInputValues(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // Clear specific error when user types
+    setInputValues(prev => ({ ...prev, [name]: value }));
     if (errors[name]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -46,20 +42,16 @@ const CalculatorCard: React.FC<CalculatorCardProps> = ({ tool }) => {
 
     tool.inputs.forEach(input => {
       const val = inputValues[input.name];
-      
       if (input.options) {
-        // Dropdown inputs are safe, just parse
         numericValues[input.name] = parseFloat(val);
       } else {
-        // Text inputs validation
         if (!val || val.trim() === '') {
-          newErrors[input.name] = 'Value required';
+          newErrors[input.name] = 'Required';
           hasError = true;
         } else {
-          // Strict number check
           const num = Number(val);
           if (isNaN(num)) {
-            newErrors[input.name] = 'Invalid number';
+            newErrors[input.name] = 'Invalid';
             hasError = true;
           } else {
             numericValues[input.name] = num;
@@ -70,59 +62,59 @@ const CalculatorCard: React.FC<CalculatorCardProps> = ({ tool }) => {
 
     if (hasError) {
       setErrors(newErrors);
-      setResult(null); // Clear result if validation fails
+      setResult(null);
     } else {
       setErrors({});
-      // Execute calculation with validated numbers
       setResult(tool.calculate(numericValues));
-      // Keep showSteps state as is (user preference)
+      setResultKey(prev => prev + 1); // Trigger animation
+      setShowSteps(false);
     }
   };
 
   return (
-    <div className="bg-circuit-800 border border-circuit-700 rounded-xl p-6 shadow-lg hover:shadow-electric-900/20 transition-all flex flex-col h-full">
-      <div className="mb-4">
-        <h3 className="text-lg font-bold text-white">{tool.name}</h3>
-        <p className="text-sm text-slate-400">{tool.description}</p>
+    <div className="glass-panel rounded-xl p-6 shadow-lg hover:shadow-electric-500/10 hover:border-electric-500/30 transition-all duration-300 flex flex-col h-full group">
+      <div className="mb-6 pb-4 border-b border-white/5">
+        <h3 className="text-lg font-bold text-white group-hover:text-electric-400 transition-colors">{tool.name}</h3>
+        <p className="text-xs text-slate-400 mt-1 leading-relaxed">{tool.description}</p>
       </div>
 
-      <div className="space-y-4 flex-grow">
+      <div className="space-y-5 flex-grow">
         {tool.inputs.map((input) => (
-          <div key={input.name} className="flex flex-col space-y-1">
-            <label className="text-xs font-semibold text-electric-400 uppercase tracking-wider">
+          <div key={input.name} className="relative group/input">
+            <label className="text-[10px] font-bold text-electric-500 uppercase tracking-wider mb-1 block">
               {input.label} {input.unit ? `(${input.unit})` : ''}
             </label>
             {input.options ? (
                <div className="relative">
                  <select
-                   className="w-full appearance-none bg-circuit-900 border border-circuit-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-electric-500 transition-colors"
+                   className="w-full appearance-none bg-black/20 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-electric-500 focus:ring-1 focus:ring-electric-500 transition-all cursor-pointer"
                    onChange={(e) => handleInputChange(input.name, e.target.value)}
                    value={inputValues[input.name]}
                  >
                    {input.options.map(opt => (
-                     <option key={opt.label} value={opt.value}>{opt.label}</option>
+                     <option key={opt.label} value={opt.value} className="bg-circuit-900">{opt.label}</option>
                    ))}
                  </select>
-                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-electric-500">
                     <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
                   </div>
                </div>
             ) : (
-              <div className="flex flex-col">
+              <div className="relative">
                 <input
                   type="number"
                   step="any"
-                  placeholder="Enter value"
-                  className={`bg-circuit-900 border rounded-lg px-3 py-2 text-white focus:outline-none transition-colors ${
+                  placeholder="0.00"
+                  className={`w-full bg-black/20 border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:ring-1 transition-all placeholder-slate-600 ${
                     errors[input.name] 
-                      ? 'border-red-500 focus:border-red-500' 
-                      : 'border-circuit-700 focus:border-electric-500'
+                      ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500' 
+                      : 'border-white/10 focus:border-electric-500 focus:ring-electric-500'
                   }`}
                   onChange={(e) => handleInputChange(input.name, e.target.value)}
                   value={inputValues[input.name]}
                 />
                 {errors[input.name] && (
-                  <span className="text-red-400 text-xs mt-1 font-medium animate-pulse">
+                  <span className="absolute right-0 -bottom-4 text-red-400 text-[10px] font-medium">
                     {errors[input.name]}
                   </span>
                 )}
@@ -134,31 +126,37 @@ const CalculatorCard: React.FC<CalculatorCardProps> = ({ tool }) => {
 
       <button
         onClick={handleCalculate}
-        className="w-full mt-6 bg-electric-600 hover:bg-electric-500 text-white font-semibold py-2 rounded-lg transition-colors active:transform active:scale-95 shadow-md shadow-electric-900/20"
+        className="w-full mt-8 bg-gradient-to-r from-electric-600 to-electric-500 hover:from-electric-500 hover:to-electric-400 text-white font-bold py-2.5 rounded-lg transition-all shadow-lg shadow-electric-900/20 active:scale-[0.98]"
       >
         Calculate
       </button>
 
       {result && (
-        <div className="mt-4 p-4 bg-circuit-900 rounded-lg border border-circuit-700 animate-fade-in">
-          <div className="flex justify-between items-end mb-2">
-            <span className="text-slate-400 text-sm">Result:</span>
-            <span className="text-2xl font-mono text-electric-400">
-              {result.result.toExponential(4).replace('e+0', '')} <span className="text-sm">{result.unit}</span>
-            </span>
+        <div key={resultKey} className="mt-6 animate-fade-in-up">
+          <div className="p-4 bg-gradient-to-br from-circuit-800 to-black rounded-lg border border-electric-500/20 relative overflow-hidden">
+             {/* Glow effect behind result */}
+             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-electric-500/20 blur-xl rounded-full"></div>
+             
+             <div className="relative z-10 text-center">
+                <div className="text-slate-400 text-xs uppercase tracking-widest mb-1">Result</div>
+                <div className="text-3xl font-mono font-bold text-white drop-shadow-md">
+                  {result.result.toExponential(4).replace('e+0', '')}
+                  <span className="text-sm text-electric-400 ml-1">{result.unit}</span>
+                </div>
+             </div>
           </div>
           
-          <div className="flex justify-end">
+          <div className="mt-2 text-center">
             <button 
               onClick={() => setShowSteps(!showSteps)}
-              className="text-xs text-electric-500 hover:text-electric-400 flex items-center gap-1 transition-colors"
+              className="text-[10px] uppercase tracking-wide font-bold text-slate-500 hover:text-white transition-colors flex items-center justify-center gap-1 mx-auto"
             >
-              {showSteps ? 'Hide Steps' : 'Show Steps'}
+              {showSteps ? 'Hide Calculation' : 'Show Calculation'}
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
                 fill="none" 
                 viewBox="0 0 24 24" 
-                strokeWidth={1.5} 
+                strokeWidth={2} 
                 stroke="currentColor" 
                 className={`w-3 h-3 transform transition-transform ${showSteps ? 'rotate-180' : ''}`}
               >
@@ -168,10 +166,10 @@ const CalculatorCard: React.FC<CalculatorCardProps> = ({ tool }) => {
           </div>
 
           {showSteps && (
-            <div className="mt-2 pt-2 border-t border-circuit-800 animate-fade-in-down">
-              <p className="text-xs text-slate-500 font-mono whitespace-pre-wrap leading-relaxed">
+            <div className="mt-3 p-3 bg-black/30 rounded border border-white/5 animate-fade-in-up">
+              <pre className="text-xs text-slate-300 font-mono whitespace-pre-wrap leading-relaxed">
                 {result.steps}
-              </p>
+              </pre>
             </div>
           )}
         </div>
