@@ -232,6 +232,43 @@ const tools: CalculationTool[] = [
     }
   },
   {
+    id: 'ind_calc',
+    name: "Inductor Calc (L1, L2)",
+    description: "Equivalent inductance for Series or Parallel connection.",
+    category: 'Components',
+    inputs: [
+      { name: 'l1', label: 'Inductance 1', unit: 'H' },
+      { name: 'l2', label: 'Inductance 2', unit: 'H' },
+      { 
+          name: 'type', 
+          label: 'Connection',
+          options: [
+              { label: 'Series', value: 1 },
+              { label: 'Parallel', value: 2 }
+          ]
+      }
+    ],
+    calculate: (v) => {
+      if (v.type === 1) {
+          // Series
+          return {
+              result: v.l1 + v.l2,
+              unit: 'H',
+              steps: `Series Formula: Leq = L1 + L2\nLeq = ${v.l1} + ${v.l2}`
+          };
+      } else {
+          // Parallel
+          const denom = v.l1 + v.l2;
+          const res = denom === 0 ? 0 : (v.l1 * v.l2) / denom;
+           return {
+              result: res,
+              unit: 'H',
+              steps: `Parallel Formula: Leq = (L1 × L2) / (L1 + L2)\nLeq = (${v.l1} × ${v.l2}) / (${v.l1} + ${v.l2})`
+          };
+      }
+    }
+  },
+  {
     id: 'cap_energy',
     name: "Capacitor Energy",
     description: "Energy stored in a capacitor.",

@@ -6,32 +6,77 @@ interface CalculatorCardProps {
 }
 
 const CalculatorCard: React.FC<CalculatorCardProps> = ({ tool }) => {
-  const [inputs, setInputs] = useState<Record<string, number>>(() => {
-    // Initialize default values for select inputs
-    const defaults: Record<string, number> = {};
+  // Store inputs as strings to allow typing (e.g., "0." or "-") and validate later
+  const [inputValues, setInputValues] = useState<Record<string, string>>(() => {
+    const defaults: Record<string, string> = {};
     tool.inputs.forEach(input => {
       if (input.options && input.options.length > 0) {
-        defaults[input.name] = input.options[0].value;
+        defaults[input.name] = input.options[0].value.toString();
+      } else {
+        defaults[input.name] = ''; // Initialize empty for text inputs
       }
     });
     return defaults;
   });
   
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [result, setResult] = useState<{ result: number; unit: string; steps: string } | null>(null);
   const [showSteps, setShowSteps] = useState(false);
 
   const handleInputChange = (name: string, value: string) => {
-    setInputs(prev => ({
+    setInputValues(prev => ({
       ...prev,
-      [name]: parseFloat(value) || 0
+      [name]: value
     }));
+    
+    // Clear specific error when user types
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
   const handleCalculate = () => {
-    const res = tool.calculate(inputs);
-    setResult(res);
-    // We do not auto-open steps to keep it uncluttered, 
-    // but if the user already opened them, we keep them open.
+    const numericValues: Record<string, number> = {};
+    const newErrors: Record<string, string> = {};
+    let hasError = false;
+
+    tool.inputs.forEach(input => {
+      const val = inputValues[input.name];
+      
+      if (input.options) {
+        // Dropdown inputs are safe, just parse
+        numericValues[input.name] = parseFloat(val);
+      } else {
+        // Text inputs validation
+        if (!val || val.trim() === '') {
+          newErrors[input.name] = 'Value required';
+          hasError = true;
+        } else {
+          // Strict number check
+          const num = Number(val);
+          if (isNaN(num)) {
+            newErrors[input.name] = 'Invalid number';
+            hasError = true;
+          } else {
+            numericValues[input.name] = num;
+          }
+        }
+      }
+    });
+
+    if (hasError) {
+      setErrors(newErrors);
+      setResult(null); // Clear result if validation fails
+    } else {
+      setErrors({});
+      // Execute calculation with validated numbers
+      setResult(tool.calculate(numericValues));
+      // Keep showSteps state as is (user preference)
+    }
   };
 
   return (
@@ -52,7 +97,7 @@ const CalculatorCard: React.FC<CalculatorCardProps> = ({ tool }) => {
                  <select
                    className="w-full appearance-none bg-circuit-900 border border-circuit-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-electric-500 transition-colors"
                    onChange={(e) => handleInputChange(input.name, e.target.value)}
-                   value={inputs[input.name]}
+                   value={inputValues[input.name]}
                  >
                    {input.options.map(opt => (
                      <option key={opt.label} value={opt.value}>{opt.label}</option>
@@ -63,12 +108,25 @@ const CalculatorCard: React.FC<CalculatorCardProps> = ({ tool }) => {
                   </div>
                </div>
             ) : (
-              <input
-                type="number"
-                placeholder="0"
-                className="bg-circuit-900 border border-circuit-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-electric-500 transition-colors"
-                onChange={(e) => handleInputChange(input.name, e.target.value)}
-              />
+              <div className="flex flex-col">
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="Enter value"
+                  className={`bg-circuit-900 border rounded-lg px-3 py-2 text-white focus:outline-none transition-colors ${
+                    errors[input.name] 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-circuit-700 focus:border-electric-500'
+                  }`}
+                  onChange={(e) => handleInputChange(input.name, e.target.value)}
+                  value={inputValues[input.name]}
+                />
+                {errors[input.name] && (
+                  <span className="text-red-400 text-xs mt-1 font-medium animate-pulse">
+                    {errors[input.name]}
+                  </span>
+                )}
+              </div>
             )}
           </div>
         ))}
