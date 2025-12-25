@@ -18,6 +18,7 @@ const CalculatorCard: React.FC<CalculatorCardProps> = ({ tool }) => {
   });
   
   const [result, setResult] = useState<{ result: number; unit: string; steps: string } | null>(null);
+  const [showSteps, setShowSteps] = useState(false);
 
   const handleInputChange = (name: string, value: string) => {
     setInputs(prev => ({
@@ -29,16 +30,18 @@ const CalculatorCard: React.FC<CalculatorCardProps> = ({ tool }) => {
   const handleCalculate = () => {
     const res = tool.calculate(inputs);
     setResult(res);
+    // We do not auto-open steps to keep it uncluttered, 
+    // but if the user already opened them, we keep them open.
   };
 
   return (
-    <div className="bg-circuit-800 border border-circuit-700 rounded-xl p-6 shadow-lg hover:shadow-electric-900/20 transition-all">
+    <div className="bg-circuit-800 border border-circuit-700 rounded-xl p-6 shadow-lg hover:shadow-electric-900/20 transition-all flex flex-col h-full">
       <div className="mb-4">
         <h3 className="text-lg font-bold text-white">{tool.name}</h3>
         <p className="text-sm text-slate-400">{tool.description}</p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 flex-grow">
         {tool.inputs.map((input) => (
           <div key={input.name} className="flex flex-col space-y-1">
             <label className="text-xs font-semibold text-electric-400 uppercase tracking-wider">
@@ -73,7 +76,7 @@ const CalculatorCard: React.FC<CalculatorCardProps> = ({ tool }) => {
 
       <button
         onClick={handleCalculate}
-        className="w-full mt-6 bg-electric-600 hover:bg-electric-500 text-white font-semibold py-2 rounded-lg transition-colors active:transform active:scale-95"
+        className="w-full mt-6 bg-electric-600 hover:bg-electric-500 text-white font-semibold py-2 rounded-lg transition-colors active:transform active:scale-95 shadow-md shadow-electric-900/20"
       >
         Calculate
       </button>
@@ -86,9 +89,33 @@ const CalculatorCard: React.FC<CalculatorCardProps> = ({ tool }) => {
               {result.result.toExponential(4).replace('e+0', '')} <span className="text-sm">{result.unit}</span>
             </span>
           </div>
-          <p className="text-xs text-slate-500 font-mono border-t border-circuit-800 pt-2 whitespace-pre-wrap">
-            {result.steps}
-          </p>
+          
+          <div className="flex justify-end">
+            <button 
+              onClick={() => setShowSteps(!showSteps)}
+              className="text-xs text-electric-500 hover:text-electric-400 flex items-center gap-1 transition-colors"
+            >
+              {showSteps ? 'Hide Steps' : 'Show Steps'}
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                strokeWidth={1.5} 
+                stroke="currentColor" 
+                className={`w-3 h-3 transform transition-transform ${showSteps ? 'rotate-180' : ''}`}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+              </svg>
+            </button>
+          </div>
+
+          {showSteps && (
+            <div className="mt-2 pt-2 border-t border-circuit-800 animate-fade-in-down">
+              <p className="text-xs text-slate-500 font-mono whitespace-pre-wrap leading-relaxed">
+                {result.steps}
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

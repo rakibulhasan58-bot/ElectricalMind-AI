@@ -171,6 +171,48 @@ const tools: CalculationTool[] = [
     }
   },
   {
+    id: 'arc_flash',
+    name: "Arc Flash Hazard",
+    description: "Est. Incident Energy (Ralph Lee) & PPE Category (NFPA 70E).",
+    category: 'Power',
+    inputs: [
+      { name: 'v', label: 'Sys. Voltage', unit: 'kV' },
+      { name: 'i', label: 'Fault Current', unit: 'kA' },
+      { name: 't', label: 'Arc Duration', unit: 's' },
+      { name: 'd', label: 'Work Distance', unit: 'mm' }, 
+    ],
+    calculate: (val) => {
+        // Ralph Lee Theoretical Max Power Model (Conservative)
+        // E (cal/cm2) = 512,000 * V(kV) * I(kA) * t(s) / D(mm)^2
+        const v = val.v;
+        const i = val.i;
+        const t = val.t;
+        // Default distance to 455mm (18 inches) if 0/undefined to avoid division by zero
+        const d = val.d || 455; 
+
+        const k = 512000;
+        const energy = (k * v * i * t) / (d * d);
+        
+        // Arc Flash Boundary (Db) where Energy = 1.2 cal/cm2
+        // 1.2 = (k * v * i * t) / Db^2  => Db = sqrt((k * v * i * t) / 1.2)
+        const boundary = energy > 0 ? Math.sqrt((k * v * i * t) / 1.2) : 0;
+
+        // Determine PPE Category (Approximate NFPA 70E Guide)
+        let ppe = "Cat 0 (No Hazard)";
+        if (energy > 40) ppe = "DANGEROUS (>40 cal) - NO SAFE PPE";
+        else if (energy > 25) ppe = "Category 4 (Min 40 cal/cm²)";
+        else if (energy > 8) ppe = "Category 3 (Min 25 cal/cm²)";
+        else if (energy > 4) ppe = "Category 2 (Min 8 cal/cm²)";
+        else if (energy > 1.2) ppe = "Category 1 (Min 4 cal/cm²)";
+        
+        return {
+            result: energy,
+            unit: 'cal/cm²',
+            steps: `Method: Ralph Lee (Theoretical Max Power)\nFormula: E = 512,000 × V × Ibf × t / D²\n\nInputs:\nV=${v}kV, I=${i}kA, t=${t}s, D=${d}mm\n\nResults:\nIncident Energy: ${energy.toFixed(2)} cal/cm²\nArc Flash Boundary (1.2 cal): ${boundary.toFixed(0)} mm\n\nPPE Requirement: ${ppe}`
+        };
+    }
+  },
+  {
     id: 'res_parallel',
     name: "Parallel Resistors (2)",
     description: "Calculate equivalent resistance of two parallel resistors.",
