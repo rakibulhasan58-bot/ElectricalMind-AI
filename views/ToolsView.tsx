@@ -81,8 +81,8 @@ const tools: CalculationTool[] = [
   },
   {
     id: 'transformer_load',
-    name: "Transformer Load Analysis",
-    description: "Calculate kVA, kW, kVAR & PF from V, I.",
+    name: "Transformer Analysis",
+    description: "Calculate Load (kVA) & Core Losses (Hysteresis/Eddy).",
     category: 'Power',
     inputs: [
       { name: 'v', label: 'Voltage (Line)', unit: 'V' },
@@ -95,22 +95,78 @@ const tools: CalculationTool[] = [
           { label: '3-Phase', value: 3 },
           { label: '1-Phase', value: 1 }
         ]
-      }
+      },
+      // Core Loss Inputs
+      { name: 'f', label: 'Frequency', unit: 'Hz' },
+      { name: 'b', label: 'Flux Density (Bm)', unit: 'T' },
+      { name: 'mass', label: 'Core Mass', unit: 'kg' },
+      { name: 'kh', label: 'Hysteresis Coeff', unit: 'typ 0.01' },
+      { name: 'ke', label: 'Eddy Coeff', unit: 'typ 0.001' },
+      { name: 'n', label: 'Steinmetz Exp', unit: 'typ 1.6' }
     ],
     calculate: (v) => {
+      // Load Analysis
       const isThreePhase = v.ph === 3;
       const factor = isThreePhase ? Math.sqrt(3) : 1;
-      
       const s = (factor * v.v * v.i) / 1000; // kVA
       const p = s * v.pf; // kW
-      
-      // Q = S * sin(acos(pf))
       const q = s * Math.sqrt(1 - Math.pow(Math.min(v.pf, 1), 2)); // kVAR
+
+      // Core Loss Analysis (Steinmetz)
+      // Defaults if not provided to avoid 0 result issues for valid inputs
+      const f = v.f || 50; 
+      const b = v.b || 0; 
+      const mass = v.mass || 0;
+      const kh = v.kh || 0.01; 
+      const ke = v.ke || 0.001; 
+      const n_exp = v.n || 1.6;
+
+      // Hysteresis Loss Ph = Kh * f * B^n * Mass
+      const ph_loss = kh * f * Math.pow(b, n_exp) * mass;
+      // Eddy Current Loss Pe = Ke * f^2 * B^2 * Mass
+      const pe_loss = ke * Math.pow(f, 2) * Math.pow(b, 2) * mass;
+      const core_total = ph_loss + pe_loss;
 
       return {
         result: s,
         unit: 'kVA',
-        steps: `System: ${v.ph}-Phase\nApparent Power (S): ${s.toFixed(2)} kVA\nReal Power (P): ${p.toFixed(2)} kW\nReactive Power (Q): ${q.toFixed(2)} kVAR\nPower Factor: ${v.pf}`
+        steps: `LOAD ANALYSIS:\nApparent Power (S): ${s.toFixed(2)} kVA\nReal Power (P): ${p.toFixed(2)} kW\nReactive Power (Q): ${q.toFixed(2)} kVAR\n\nCORE LOSS ANALYSIS:\nInputs: f=${f}Hz, B=${b}T, Mass=${mass}kg\nConstants: Kh=${kh}, Ke=${ke}, n=${n_exp}\n\nHysteresis Loss: ${ph_loss.toFixed(2)} W\nEddy Current Loss: ${pe_loss.toFixed(2)} W\nTotal Core Loss: ${core_total.toFixed(2)} W`
+      };
+    }
+  },
+  {
+    id: 'transformer_eff',
+    name: "Transformer Efficiency",
+    description: "Calculate efficiency at Full & Half Load.",
+    category: 'Power',
+    inputs: [
+      { name: 'kva', label: 'Rated Power', unit: 'kVA' },
+      { name: 'wi', label: 'Core Loss (Wi)', unit: 'W' },
+      { name: 'wc', label: 'F.L. Copper Loss (Wc)', unit: 'W' },
+      { name: 'pf', label: 'Power Factor', unit: '0-1' },
+    ],
+    calculate: (v) => {
+      const kva = v.kva;
+      const wi = v.wi;
+      const wc = v.wc;
+      const pf = v.pf;
+
+      // Full Load (x=1)
+      const out_fl = kva * 1000 * pf;
+      const loss_fl = wi + wc;
+      const in_fl = out_fl + loss_fl;
+      const eff_fl = in_fl > 0 ? (out_fl / in_fl) * 100 : 0;
+
+      // Half Load (x=0.5)
+      const out_hl = 0.5 * kva * 1000 * pf;
+      const loss_hl = wi + (0.25 * wc);
+      const in_hl = out_hl + loss_hl;
+      const eff_hl = in_hl > 0 ? (out_hl / in_hl) * 100 : 0;
+
+      return {
+        result: eff_fl,
+        unit: '% (Full Load)',
+        steps: `Full Load (x=1):\nOutput = ${(out_fl/1000).toFixed(2)} kW\nLosses = ${wi} + ${wc} = ${loss_fl.toFixed(2)} W\nη = ${eff_fl.toFixed(2)}%\n\nHalf Load (x=0.5):\nOutput = ${(out_hl/1000).toFixed(2)} kW\nLosses = ${wi} + 0.25 × ${wc} = ${loss_hl.toFixed(2)} W\nη = ${eff_hl.toFixed(2)}%`
       };
     }
   },
@@ -204,7 +260,7 @@ const tools: CalculationTool[] = [
       
       const fr = (v.l > 0 && v.c > 0) ? 1 / (2 * Math.PI * Math.sqrt(v.l * v.c)) : 0;
       const phaseRad = Math.atan2(reactance, v.r);
-      const phaseDeg = phaseRad * (180 / Math.PI);
+      const phaseDeg = Math.atan2(reactance, v.r) * (180 / Math.PI);
 
       return {
         result: z,
