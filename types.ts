@@ -2,7 +2,11 @@ export enum ViewState {
   DASHBOARD = 'DASHBOARD',
   TUTOR = 'TUTOR',
   CALCULATORS = 'CALCULATORS',
-  SIMULATION = 'SIMULATION'
+  SIMULATION = 'SIMULATION',
+  STANDARDS = 'STANDARDS',
+  AUTOCAD = 'AUTOCAD',
+  BIM = 'BIM',
+  DESIGN = 'DESIGN'
 }
 
 export interface Message {
@@ -18,7 +22,12 @@ export interface CalculationTool {
   name: string;
   description: string;
   category: 'Basic' | 'Power' | 'Components';
-  inputs: { name: string; label: string; unit: string }[];
+  inputs: { 
+    name: string; 
+    label: string; 
+    unit?: string;
+    options?: { label: string; value: number }[];
+  }[];
   calculate: (values: Record<string, number>) => { result: number; unit: string; steps: string };
 }
 

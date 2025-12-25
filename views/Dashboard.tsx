@@ -17,7 +17,20 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         </p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+        
+        {/* Card 0: Electrical Design (New Feature) */}
+        <div 
+             onClick={() => onNavigate(ViewState.DESIGN)}
+             className="group cursor-pointer bg-circuit-900 border border-circuit-800 hover:border-pink-500/50 rounded-2xl p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-pink-900/20 hover:-translate-y-1"
+        >
+          <div className="w-12 h-12 bg-pink-900/30 rounded-lg flex items-center justify-center mb-4 text-2xl group-hover:bg-pink-600 group-hover:text-white transition-colors">
+            🏗️
+          </div>
+          <h3 className="text-xl font-bold text-white mb-2">Design Studio</h3>
+          <p className="text-slate-400 text-sm">Create BOQs, Tender Docs, and complete designs for Residential & Industrial projects.</p>
+        </div>
+
         {/* Card 1: AI Tutor */}
         <div 
             onClick={() => onNavigate(ViewState.TUTOR)}
@@ -28,9 +41,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           </div>
           <h3 className="text-xl font-bold text-white mb-2">AI Problem Solver</h3>
           <p className="text-slate-400 text-sm">Ask complex circuit questions, get design help, or explain theory. Powered by Gemini.</p>
-          <div className="mt-4 flex items-center text-electric-500 text-sm font-medium">
-            Start Chat <span className="ml-1">→</span>
-          </div>
         </div>
 
         {/* Card 2: Calculators */}
@@ -43,9 +53,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           </div>
           <h3 className="text-xl font-bold text-white mb-2">Design Toolbox</h3>
           <p className="text-slate-400 text-sm">Instant calculators for Ohm's Law, Power, Capacitance, Inductance, and more.</p>
-           <div className="mt-4 flex items-center text-blue-500 text-sm font-medium">
-            Open Tools <span className="ml-1">→</span>
-          </div>
         </div>
 
          {/* Card 3: Simulation */}
@@ -58,9 +65,42 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           </div>
           <h3 className="text-xl font-bold text-white mb-2">Visual Lab</h3>
           <p className="text-slate-400 text-sm">Visualize AC waveforms, understand phase angles, and analyze signal properties.</p>
-           <div className="mt-4 flex items-center text-purple-500 text-sm font-medium">
-            Visualize <span className="ml-1">→</span>
+        </div>
+
+        {/* Card 4: Standards */}
+        <div 
+             onClick={() => onNavigate(ViewState.STANDARDS)}
+             className="group cursor-pointer bg-circuit-900 border border-circuit-800 hover:border-emerald-500/50 rounded-2xl p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-900/20 hover:-translate-y-1"
+        >
+          <div className="w-12 h-12 bg-emerald-900/30 rounded-lg flex items-center justify-center mb-4 text-2xl group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+            📜
           </div>
+          <h3 className="text-xl font-bold text-white mb-2">Codes & Stds</h3>
+          <p className="text-slate-400 text-sm">Learn BNBC, NEC, IEC, NFPA, and IEEE standards with expert AI guidance.</p>
+        </div>
+
+        {/* Card 5: AutoCAD */}
+        <div 
+             onClick={() => onNavigate(ViewState.AUTOCAD)}
+             className="group cursor-pointer bg-circuit-900 border border-circuit-800 hover:border-orange-500/50 rounded-2xl p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-orange-900/20 hover:-translate-y-1"
+        >
+          <div className="w-12 h-12 bg-orange-900/30 rounded-lg flex items-center justify-center mb-4 text-2xl group-hover:bg-orange-600 group-hover:text-white transition-colors">
+            📐
+          </div>
+          <h3 className="text-xl font-bold text-white mb-2">AutoCAD Elect.</h3>
+          <p className="text-slate-400 text-sm">Master electrical design workflows, from schematics to panel layouts.</p>
+        </div>
+
+        {/* Card 6: BIM / Revit */}
+        <div 
+             onClick={() => onNavigate(ViewState.BIM)}
+             className="group cursor-pointer bg-circuit-900 border border-circuit-800 hover:border-cyan-500/50 rounded-2xl p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-900/20 hover:-translate-y-1"
+        >
+          <div className="w-12 h-12 bg-cyan-900/30 rounded-lg flex items-center justify-center mb-4 text-2xl group-hover:bg-cyan-600 group-hover:text-white transition-colors">
+            🏢
+          </div>
+          <h3 className="text-xl font-bold text-white mb-2">BIM & Revit</h3>
+          <p className="text-slate-400 text-sm">Learn 3D modeling for electrical systems, coordination, and Revit workflows.</p>
         </div>
       </div>
 

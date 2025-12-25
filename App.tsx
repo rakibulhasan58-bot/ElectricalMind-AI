@@ -4,6 +4,10 @@ import Dashboard from './views/Dashboard';
 import TutorView from './views/TutorView';
 import ToolsView from './views/ToolsView';
 import SimulationView from './views/SimulationView';
+import StandardsView from './views/StandardsView';
+import AutocadView from './views/AutocadView';
+import BimView from './views/BimView';
+import DesignView from './views/DesignView';
 import { ViewState } from './types';
 
 const App: React.FC = () => {
@@ -20,6 +24,14 @@ const App: React.FC = () => {
         return <ToolsView />;
       case ViewState.SIMULATION:
         return <SimulationView />;
+      case ViewState.STANDARDS:
+        return <StandardsView />;
+      case ViewState.AUTOCAD:
+        return <AutocadView />;
+      case ViewState.BIM:
+        return <BimView />;
+      case ViewState.DESIGN:
+        return <DesignView />;
       default:
         return <Dashboard onNavigate={setCurrentView} />;
     }

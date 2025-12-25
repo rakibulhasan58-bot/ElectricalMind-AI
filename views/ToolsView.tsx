@@ -34,6 +34,52 @@ const tools: CalculationTool[] = [
     })
   },
   {
+    id: 'dc_motor',
+    name: "DC Motor Calculator",
+    description: "Calculate Speed, Torque & Power (Ideal).",
+    category: 'Power',
+    inputs: [
+      { name: 'v', label: 'Voltage', unit: 'V' },
+      { name: 'i', label: 'Current', unit: 'A' },
+      { name: 'kt', label: 'Motor Constant (Kt)', unit: 'Nm/A' },
+    ],
+    calculate: (val) => {
+      const torque = val.kt * val.i;
+      // w (rad/s) = V / Kt (assuming ideal E=V)
+      const w = val.kt > 0 ? val.v / val.kt : 0;
+      const rpm = w * 9.54929658551; // 60 / 2pi
+      const power = val.v * val.i;
+
+      return {
+        result: rpm,
+        unit: 'RPM',
+        steps: `Speed: ${rpm.toFixed(1)} RPM\nTorque: ${torque.toFixed(4)} Nm\nPower: ${power.toFixed(2)} W`
+      };
+    }
+  },
+  {
+    id: 'transformer_ideal',
+    name: "Ideal Transformer",
+    description: "Calculate Secondary Voltage & Current from Ratio.",
+    category: 'Power',
+    inputs: [
+      { name: 'vp', label: 'Primary Voltage', unit: 'V' },
+      { name: 'ip', label: 'Primary Current', unit: 'A' },
+      { name: 'n', label: 'Turns Ratio (Np/Ns)', unit: '' },
+    ],
+    calculate: (v) => {
+      // Vs = Vp / N
+      // Is = Ip * N (Power conservation Vp*Ip = Vs*Is -> Vp*Ip = (Vp/N)*Is -> Is = Ip*N)
+      const vs = v.n === 0 ? 0 : v.vp / v.n;
+      const is = v.ip * v.n;
+      return {
+        result: vs,
+        unit: 'V',
+        steps: `Secondary Voltage (Vs) = Vp / N = ${v.vp} / ${v.n} = ${vs.toFixed(2)} V\nSecondary Current (Is) = Ip × N = ${v.ip} × ${v.n} = ${is.toFixed(2)} A`
+      };
+    }
+  },
+  {
     id: 'res_parallel',
     name: "Parallel Resistors (2)",
     description: "Calculate equivalent resistance of two parallel resistors.",
@@ -102,6 +148,123 @@ const tools: CalculationTool[] = [
               steps: `Xc = 1 / (2πfC)`
           }
       }
+  },
+  {
+    id: 'rlc_series',
+    name: "RLC Series Circuit",
+    description: "Calculate Impedance, Phase & Resonance (Series).",
+    category: 'Components',
+    inputs: [
+      { name: 'r', label: 'Resistance', unit: 'Ω' },
+      { name: 'l', label: 'Inductance', unit: 'H' },
+      { name: 'c', label: 'Capacitance', unit: 'F' },
+      { name: 'f', label: 'Frequency', unit: 'Hz' },
+    ],
+    calculate: (v) => {
+      const omega = 2 * Math.PI * v.f;
+      const xl = omega * v.l;
+      const xc = v.c > 0 ? 1 / (omega * v.c) : 0;
+      const reactance = xl - xc;
+      const z = Math.sqrt(v.r * v.r + reactance * reactance);
+      
+      const fr = (v.l > 0 && v.c > 0) ? 1 / (2 * Math.PI * Math.sqrt(v.l * v.c)) : 0;
+      const phaseRad = Math.atan2(reactance, v.r);
+      const phaseDeg = phaseRad * (180 / Math.PI);
+
+      return {
+        result: z,
+        unit: 'Ω',
+        steps: `XL = ${xl.toFixed(2)}Ω, XC = ${xc.toFixed(2)}Ω\nZ = √[R² + (XL-XC)²]\n\nPhase Angle: ${phaseDeg.toFixed(2)}°\nResonance Freq: ${fr.toFixed(2)} Hz`
+      };
+    }
+  },
+  {
+    id: 'rlc_parallel',
+    name: "RLC Parallel Circuit",
+    description: "Calculate Impedance, Phase & Resonance (Parallel).",
+    category: 'Components',
+    inputs: [
+      { name: 'r', label: 'Resistance', unit: 'Ω' },
+      { name: 'l', label: 'Inductance', unit: 'H' },
+      { name: 'c', label: 'Capacitance', unit: 'F' },
+      { name: 'f', label: 'Frequency', unit: 'Hz' },
+    ],
+    calculate: (v) => {
+      const omega = 2 * Math.PI * v.f;
+      const xl = omega * v.l;
+      const xc = v.c > 0 ? 1 / (omega * v.c) : 0;
+      
+      // Susceptance (B) and Conductance (G)
+      const g = v.r > 0 ? 1 / v.r : 0;
+      const bl = xl > 0 ? 1 / xl : 0;
+      const bc = xc > 0 ? 1 / xc : 0;
+      
+      // Total Admittance Y = sqrt(G^2 + (Bc - Bl)^2)
+      // Convention: Bc leads, Bl lags. B_net = Bc - Bl
+      const b_net = bc - bl;
+      const y = Math.sqrt(g * g + b_net * b_net);
+      
+      const z = y > 0 ? 1 / y : 0;
+      
+      const fr = (v.l > 0 && v.c > 0) ? 1 / (2 * Math.PI * Math.sqrt(v.l * v.c)) : 0;
+      
+      // Phase of Impedance (Z) is negative of Phase of Admittance (Y)
+      // Theta_Y = atan(B_net / G)
+      const phaseY = Math.atan2(b_net, g);
+      const phaseZDeg = -phaseY * (180 / Math.PI);
+
+      return {
+        result: z,
+        unit: 'Ω',
+        steps: `XL=${xl.toFixed(1)}Ω, XC=${xc.toFixed(1)}Ω\nAdmittance (Y)=${y.toFixed(4)} S\n\nPhase (Z): ${phaseZDeg.toFixed(2)}°\nResonance Freq: ${fr.toFixed(2)} Hz`
+      };
+    }
+  },
+  {
+    id: 'unit_converter',
+    name: "Metric Unit Converter",
+    description: "Convert between metric prefixes (e.g. mV to V, mA to A).",
+    category: 'Basic',
+    inputs: [
+      { name: 'val', label: 'Value' },
+      { 
+        name: 'from', 
+        label: 'From Prefix', 
+        options: [
+            { label: 'Pico (p)', value: 1e-12 },
+            { label: 'Nano (n)', value: 1e-9 },
+            { label: 'Micro (µ)', value: 1e-6 },
+            { label: 'Milli (m)', value: 1e-3 },
+            { label: 'Base Unit', value: 1 },
+            { label: 'Kilo (k)', value: 1e3 },
+            { label: 'Mega (M)', value: 1e6 },
+            { label: 'Giga (G)', value: 1e9 },
+        ] 
+      },
+      { 
+        name: 'to', 
+        label: 'To Prefix', 
+        options: [
+            { label: 'Pico (p)', value: 1e-12 },
+            { label: 'Nano (n)', value: 1e-9 },
+            { label: 'Micro (µ)', value: 1e-6 },
+            { label: 'Milli (m)', value: 1e-3 },
+            { label: 'Base Unit', value: 1 },
+            { label: 'Kilo (k)', value: 1e3 },
+            { label: 'Mega (M)', value: 1e6 },
+            { label: 'Giga (G)', value: 1e9 },
+        ] 
+      },
+    ],
+    calculate: (v) => {
+        const factor = v.from / v.to;
+        const res = v.val * factor;
+        return {
+            result: res,
+            unit: 'Units',
+            steps: `Result = ${v.val} × (${v.from.toExponential()} / ${v.to.toExponential()})\nMultiplier: ${factor.toExponential()}`
+        }
+    }
   }
 ];
 

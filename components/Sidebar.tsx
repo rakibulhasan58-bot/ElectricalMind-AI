@@ -12,9 +12,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, isMobileMenu
   
   const navItems = [
     { id: ViewState.DASHBOARD, label: 'Dashboard', icon: '⚡' },
+    { id: ViewState.DESIGN, label: 'Electrical Design', icon: '🏗️' },
     { id: ViewState.TUTOR, label: 'AI Tutor', icon: '🤖' },
     { id: ViewState.CALCULATORS, label: 'Toolbox', icon: '🧮' },
     { id: ViewState.SIMULATION, label: 'Visualizer', icon: '📈' },
+    { id: ViewState.STANDARDS, label: 'Codes & Std', icon: '📜' },
+    { id: ViewState.AUTOCAD, label: 'AutoCAD Elect.', icon: '📐' },
+    { id: ViewState.BIM, label: 'BIM / Revit', icon: '🏢' },
   ];
 
   const sidebarClasses = `
