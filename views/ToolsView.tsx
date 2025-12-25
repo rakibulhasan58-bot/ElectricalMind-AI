@@ -63,6 +63,56 @@ const tools: CalculationTool[] = [
     }
   },
   {
+    id: 'voltage_drop',
+    name: "Voltage Drop Calculator",
+    description: "Calculate Voltage Drop and % for DC/1-Phase AC.",
+    category: 'Power',
+    inputs: [
+      { name: 'i', label: 'Load Current', unit: 'A' },
+      { name: 'l', label: 'Length (One Way)', unit: 'm' },
+      { name: 'mv', label: 'Cable mV/A/m', unit: 'mV' },
+      { name: 'v', label: 'Supply Voltage', unit: 'V' },
+    ],
+    calculate: (val) => {
+        // Vd = (mV/A/m * I * L) / 1000
+        const vd = (val.mv * val.i * val.l) / 1000;
+        const vd_percent = val.v > 0 ? (vd / val.v) * 100 : 0;
+        
+        return {
+            result: vd,
+            unit: 'V',
+            steps: `Formula: Vd = (mV/A/m × I × L) / 1000\n\nCalculation:\n(${val.mv} × ${val.i} × ${val.l}) / 1000 = ${vd.toFixed(2)} V\n\nPercentage Drop:\n(${vd.toFixed(2)} / ${val.v}) × 100 = ${vd_percent.toFixed(2)}%`
+        }
+    }
+  },
+  {
+    id: 'rcd_calc',
+    name: "RCD Sensitivity & Compliance",
+    description: "Calculate required sensitivity and check safety (IEC 60364).",
+    category: 'Power',
+    inputs: [
+      { name: 'iload', label: 'Max Load Current', unit: 'A' },
+      { name: 'zs', label: 'Earth Fault Loop (Zs)', unit: 'Ω' },
+      { name: 'idn', label: 'Nominal Trip (IΔn)', unit: 'mA' },
+    ],
+    calculate: (v) => {
+        const idn_a = v.idn / 1000;
+        
+        // Safety: Max Idn = 50V / Zs (To keep touch voltage <= 50V)
+        const max_safe_idn = v.zs > 0 ? (50 / v.zs) * 1000 : 0;
+        
+        // Check current selection
+        const vt = idn_a * v.zs;
+        const isSafe = vt <= 50;
+
+        return {
+            result: max_safe_idn,
+            unit: 'mA (Max Safe)',
+            steps: `COMPLIANCE CHECK (Input: ${v.idn} mA):\n• Touch Voltage: ${idn_a} A × ${v.zs} Ω = ${vt.toFixed(2)} V\n• Limit: 50 V\n• Status: ${isSafe ? "✅ SAFE" : "❌ UNSAFE (Reduce Zs or IΔn)"}\n\nSENSITIVITY CALCULATION:\nTo ensure touch voltage ≤ 50V with Zs=${v.zs}Ω:\nMax IΔn = 50 / ${v.zs} = ${(max_safe_idn/1000).toFixed(4)} A = ${max_safe_idn.toFixed(1)} mA\n\nLOAD CHECK:\nLoad Current: ${v.iload} A. Ensure RCD contact rating (In) ≥ ${v.iload} A.`
+        }
+    }
+  },
+  {
     id: 'dc_motor',
     name: "DC Motor Calculator",
     description: "Calculate Speed, Torque & Power (Ideal).",
