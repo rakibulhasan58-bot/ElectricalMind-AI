@@ -80,6 +80,41 @@ const tools: CalculationTool[] = [
     }
   },
   {
+    id: 'transformer_load',
+    name: "Transformer Load Analysis",
+    description: "Calculate kVA, kW, kVAR & PF from V, I.",
+    category: 'Power',
+    inputs: [
+      { name: 'v', label: 'Voltage (Line)', unit: 'V' },
+      { name: 'i', label: 'Current', unit: 'A' },
+      { name: 'pf', label: 'Power Factor', unit: '0-1' },
+      { 
+        name: 'ph', 
+        label: 'System Phase', 
+        options: [
+          { label: '3-Phase', value: 3 },
+          { label: '1-Phase', value: 1 }
+        ]
+      }
+    ],
+    calculate: (v) => {
+      const isThreePhase = v.ph === 3;
+      const factor = isThreePhase ? Math.sqrt(3) : 1;
+      
+      const s = (factor * v.v * v.i) / 1000; // kVA
+      const p = s * v.pf; // kW
+      
+      // Q = S * sin(acos(pf))
+      const q = s * Math.sqrt(1 - Math.pow(Math.min(v.pf, 1), 2)); // kVAR
+
+      return {
+        result: s,
+        unit: 'kVA',
+        steps: `System: ${v.ph}-Phase\nApparent Power (S): ${s.toFixed(2)} kVA\nReal Power (P): ${p.toFixed(2)} kW\nReactive Power (Q): ${q.toFixed(2)} kVAR\nPower Factor: ${v.pf}`
+      };
+    }
+  },
+  {
     id: 'res_parallel',
     name: "Parallel Resistors (2)",
     description: "Calculate equivalent resistance of two parallel resistors.",
@@ -181,7 +216,7 @@ const tools: CalculationTool[] = [
   {
     id: 'rlc_parallel',
     name: "RLC Parallel Circuit",
-    description: "Calculate Impedance, Phase & Resonance (Parallel).",
+    description: "Calculate Z, Phase & Resonance (Parallel R||L||C).",
     category: 'Components',
     inputs: [
       { name: 'r', label: 'Resistance', unit: 'Ω' },
@@ -191,32 +226,38 @@ const tools: CalculationTool[] = [
     ],
     calculate: (v) => {
       const omega = 2 * Math.PI * v.f;
-      const xl = omega * v.l;
-      const xc = v.c > 0 ? 1 / (omega * v.c) : 0;
+      // Safety checks for 0 inputs (treating 0 as Component Not Present/Open for parallel)
+      const xl = (omega * v.l) || 0;
+      const xc = (v.c > 0 && omega > 0) ? 1 / (omega * v.c) : 0;
       
       // Susceptance (B) and Conductance (G)
+      // For parallel, R=0 input typically implies "No Resistor" (Open), so G=0. 
+      // Physical R=0 (Short) would result in Z=0. We assume the former for calculator usability.
       const g = v.r > 0 ? 1 / v.r : 0;
       const bl = xl > 0 ? 1 / xl : 0;
       const bc = xc > 0 ? 1 / xc : 0;
       
-      // Total Admittance Y = sqrt(G^2 + (Bc - Bl)^2)
-      // Convention: Bc leads, Bl lags. B_net = Bc - Bl
+      // Net Susceptance B = Bc - Bl (Convention: Capacitive is positive B, Inductive is negative B)
       const b_net = bc - bl;
+      
+      // Total Admittance Y = sqrt(G^2 + B^2)
       const y = Math.sqrt(g * g + b_net * b_net);
       
+      // Total Impedance Z = 1 / Y
       const z = y > 0 ? 1 / y : 0;
       
+      // Resonance Frequency = 1 / (2π√(LC))
       const fr = (v.l > 0 && v.c > 0) ? 1 / (2 * Math.PI * Math.sqrt(v.l * v.c)) : 0;
       
-      // Phase of Impedance (Z) is negative of Phase of Admittance (Y)
-      // Theta_Y = atan(B_net / G)
+      // Phase Angle = -arctan(B/G)
+      // Note: If circuit is capacitive (Bc > Bl), B_net > 0. Phase Y is positive. Phase Z is negative (Current leads Voltage).
       const phaseY = Math.atan2(b_net, g);
       const phaseZDeg = -phaseY * (180 / Math.PI);
 
       return {
         result: z,
         unit: 'Ω',
-        steps: `XL=${xl.toFixed(1)}Ω, XC=${xc.toFixed(1)}Ω\nAdmittance (Y)=${y.toFixed(4)} S\n\nPhase (Z): ${phaseZDeg.toFixed(2)}°\nResonance Freq: ${fr.toFixed(2)} Hz`
+        steps: `XL = ${xl.toFixed(2)} Ω\nXC = ${xc.toFixed(2)} Ω\n\nResonance Freq: ${fr.toFixed(2)} Hz\nPhase Angle: ${phaseZDeg.toFixed(2)}°\n\nAdmittance (Y): ${y.toExponential(4)} S`
       };
     }
   },

@@ -6,7 +6,9 @@ export enum ViewState {
   STANDARDS = 'STANDARDS',
   AUTOCAD = 'AUTOCAD',
   BIM = 'BIM',
-  DESIGN = 'DESIGN'
+  DESIGN = 'DESIGN',
+  LIGHTING = 'LIGHTING',
+  POWER_SYSTEMS = 'POWER_SYSTEMS'
 }
 
 export interface Message {

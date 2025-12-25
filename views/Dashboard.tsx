@@ -19,7 +19,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
         
-        {/* Card 0: Electrical Design (New Feature) */}
+        {/* Card 0: Electrical Design */}
         <div 
              onClick={() => onNavigate(ViewState.DESIGN)}
              className="group cursor-pointer bg-circuit-900 border border-circuit-800 hover:border-pink-500/50 rounded-2xl p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-pink-900/20 hover:-translate-y-1"
@@ -29,6 +29,30 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           </div>
           <h3 className="text-xl font-bold text-white mb-2">Design Studio</h3>
           <p className="text-slate-400 text-sm">Create BOQs, Tender Docs, and complete designs for Residential & Industrial projects.</p>
+        </div>
+
+        {/* Card 0.2: Power Systems (New Feature) */}
+        <div 
+             onClick={() => onNavigate(ViewState.POWER_SYSTEMS)}
+             className="group cursor-pointer bg-circuit-900 border border-circuit-800 hover:border-red-500/50 rounded-2xl p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-red-900/20 hover:-translate-y-1"
+        >
+          <div className="w-12 h-12 bg-red-900/30 rounded-lg flex items-center justify-center mb-4 text-2xl group-hover:bg-red-600 group-hover:text-white transition-colors">
+            🏭
+          </div>
+          <h3 className="text-xl font-bold text-white mb-2">Plants & Subs</h3>
+          <p className="text-slate-400 text-sm">Explore Thermal, Hydro, Solar plants and Substation engineering with real-world examples.</p>
+        </div>
+
+         {/* Card 0.5: Lighting Design */}
+         <div 
+             onClick={() => onNavigate(ViewState.LIGHTING)}
+             className="group cursor-pointer bg-circuit-900 border border-circuit-800 hover:border-yellow-500/50 rounded-2xl p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-yellow-900/20 hover:-translate-y-1"
+        >
+          <div className="w-12 h-12 bg-yellow-900/30 rounded-lg flex items-center justify-center mb-4 text-2xl group-hover:bg-yellow-600 group-hover:text-white transition-colors">
+            💡
+          </div>
+          <h3 className="text-xl font-bold text-white mb-2">Lighting System</h3>
+          <p className="text-slate-400 text-sm">Lumen method calculations, lux standards, and professional fixture selection.</p>
         </div>
 
         {/* Card 1: AI Tutor */}

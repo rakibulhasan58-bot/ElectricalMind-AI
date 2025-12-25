@@ -8,6 +8,8 @@ import StandardsView from './views/StandardsView';
 import AutocadView from './views/AutocadView';
 import BimView from './views/BimView';
 import DesignView from './views/DesignView';
+import LightingView from './views/LightingView';
+import PowerSystemsView from './views/PowerSystemsView';
 import { ViewState } from './types';
 
 const App: React.FC = () => {
@@ -32,6 +34,10 @@ const App: React.FC = () => {
         return <BimView />;
       case ViewState.DESIGN:
         return <DesignView />;
+      case ViewState.LIGHTING:
+        return <LightingView />;
+      case ViewState.POWER_SYSTEMS:
+        return <PowerSystemsView />;
       default:
         return <Dashboard onNavigate={setCurrentView} />;
     }
